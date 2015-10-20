@@ -43,25 +43,25 @@ struct Zombie {
 };
 
 struct CompareZombie {
-    bool operator() (Zombie &lhs, Zombie &rhs) {
-        int lhsEta = lhs.distance / lhs.speed;
-        int rhsEta = rhs.distance / rhs.speed;
+    bool operator() (Zombie* lhs, Zombie* rhs) const {
+        int lhsEta = lhs->distance / lhs->speed;
+        int rhsEta = rhs->distance / rhs->speed;
         if (lhsEta == rhsEta) {
-            if (lhs.health == rhs.health) {
-                return lhs.name > rhs.name;
+            if (lhs->health == rhs->health) {
+                return lhs->name > rhs->name;
             }
-            else return lhs.health > rhs.health;
+            else return lhs->health > rhs->health;
         }
         else return lhsEta > rhsEta;
     }
 };
 
 struct CompareRounds {
-    bool operator() (Zombie &lhs, Zombie &rhs) {
+    bool operator() (Zombie &lhs, Zombie &rhs) const {
         if (lhs.rounds == rhs.rounds) {
             return lhs.name < rhs.name;
         }
-        return lhs.rounds < rhs. rounds;
+        return lhs.rounds < rhs.rounds;
     }
 };
 

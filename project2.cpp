@@ -418,6 +418,7 @@ int main(int argc, char * argv[]) {
             for (int i = 0; i < statisticNum; ++i) {
                 os << zombieList[i].name << " "
                     << zombieList[i].rounds << '\n';
+            }
         }
         
     }
