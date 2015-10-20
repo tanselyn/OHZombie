@@ -18,8 +18,8 @@
 #include "eecs281_priority_queue.h"
 
 struct Player {
-    unsigned int quiverCap;
-    unsigned int health;
+    int quiverCap;
+    int health;
     
     Player(): quiverCap(0), health(0) {}
 };
@@ -34,11 +34,11 @@ struct Zombie {
     bool alive;
     
     Zombie(): name("a"), distance(0), speed(0), health(0), rounds(1),
-                alive(true) {}
+    alive(true) {}
     
     Zombie(std::string name, int distance, int speed, int health):
-            name(name), distance(distance), speed(speed),
-            health(health), rounds(1), alive(true) {}
+    name(name), distance(distance), speed(speed),
+    health(health), rounds(1), alive(true) {}
     
 };
 
@@ -56,8 +56,17 @@ struct CompareZombie {
     }
 };
 
-struct CompareRounds {
-    bool operator() (Zombie &lhs, Zombie &rhs) const {
+struct CompareMostRounds {
+    bool operator() (Zombie lhs, Zombie rhs) const {
+        if (lhs.rounds == rhs.rounds) {
+            return lhs.name > rhs.name;
+        }
+        return lhs.rounds < rhs.rounds;
+    }
+};
+
+struct CompareLeastRounds {
+    bool operator() (Zombie lhs, Zombie rhs) const {
         if (lhs.rounds == rhs.rounds) {
             return lhs.name < rhs.name;
         }

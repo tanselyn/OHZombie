@@ -15,32 +15,23 @@
 #include "RandomZombieGenerator.h"
 #include <fstream>
 #include <sstream>
+#include <cassert>
 
 using namespace std;
+using onslaught::RandomZombieStats;
+using onslaught::RandomZombieGenerator;
 
 void readInput(Player &you, int &seed, int &maxDistance,
                int &maxSpeed, int &maxHealth) {
     string label;
-    unsigned int nums = 0;
     
     getline(cin, label);
-    cin >> label >> nums;
-    you.quiverCap = nums;
-    
-    cin >> label >> nums;
-    you.health = nums;
-    
-    cin >> label >> nums;
-    seed = nums;
-    
-    cin >> label >> nums;
-    maxDistance = nums;
-    
-    cin >> label >> nums;
-    maxSpeed = nums;
-    
-    cin >> label >> nums;
-    maxHealth = nums;
+    cin >> label >> you.quiverCap;
+    cin >> label >> you.health;
+    cin >> label >> seed;
+    cin >> label >> maxDistance;
+    cin >> label >> maxSpeed;
+    cin >> label >> maxHealth;
 }
 
 void fillPoormanQueue(poorman_priority_queue<Zombie*, CompareZombie> &poorQueue,
@@ -134,13 +125,11 @@ int main(int argc, char * argv[]) {
     ostringstream os;
     
     bool verbose = false;
+    bool allDead = false;
     
     char type;
-    const char* poorMan = "POOR_MAN";
-    const char* sorted = "SORTED";
-    const char* binary = "BINARY";
-    const char* pairing = "PAIRING";
     string label;
+    string roundLabel;
     
     int idx = 0;
     int containerCounter = 0;
@@ -151,7 +140,6 @@ int main(int argc, char * argv[]) {
     int listedZombies = 0;
     int activeZombies = 0;
     unsigned int statisticNum = 0;
-    unsigned int inputNum = 0;
     unsigned int quiverInv = 0;
     
     Player you;
@@ -169,7 +157,8 @@ int main(int argc, char * argv[]) {
     deque<Zombie> zombieList;
     deque<Zombie> deadZombies;
     CompareZombie order1;
-    CompareRounds order2;
+    CompareMostRounds order2;
+    CompareLeastRounds order3;
     
     poorman_priority_queue<Zombie*, CompareZombie> poorQueue(order1);
     sorted_priority_queue<Zombie*, CompareZombie> sortedQueue(order1);
@@ -188,13 +177,13 @@ int main(int argc, char * argv[]) {
                 break;
             case 'c':
                 ++containerCounter;
-                if (poorMan == optarg) containerMarker = 1;
-                if (sorted == optarg) containerMarker = 2;
-                if (binary == optarg) containerMarker = 3;
-                if (pairing == optarg) containerMarker = 4;
+                if ('O' == optarg[2]) containerMarker = 1;
+                if ('R' == optarg[2]) containerMarker = 2;
+                if ('N'== optarg[2]) containerMarker = 3;
+                if ('I' == optarg[2]) containerMarker = 4;
                 break;
             case 's':
-                statisticNum = *optarg - '0';
+                statisticNum = atoi(optarg);
                 break;
             case 'v':
                 verbose = true;
@@ -213,8 +202,11 @@ int main(int argc, char * argv[]) {
     
     readInput(you, seed, maxDistance, maxSpeed, maxHealth);
     
-    cin >> label;
-    while (label == "---") {
+    RandomZombieStats stats{maxDistance, maxSpeed, maxHealth};
+    RandomZombieGenerator generator{seed, stats};
+    
+    cin >> roundLabel >> label >> roundInput;
+    while (roundLabel == "---" || !allDead) {
         ++roundCounter;
         
         if (verbose) {
@@ -229,7 +221,7 @@ int main(int argc, char * argv[]) {
                 it->distance = max(0, it->distance - it->speed);
                 if (verbose) {
                     os << "Moved: " << it->name << " (health: " << it->health << ")"
-                        << '\n';
+                    << '\n';
                 }
                 if (it->distance == 0) {
                     --you.health;
@@ -239,16 +231,10 @@ int main(int argc, char * argv[]) {
                 }
             }
         }
-
-        cin >> label >> roundInput;
         
         // Update current round information
         if (roundInput == roundCounter) {
-            cin >> label >> inputNum;
-            randZombieNum = inputNum;
-        
-            onslaught::RandomZombieStats stats{maxDistance, maxSpeed, maxHealth};
-            onslaught::RandomZombieGenerator generator{seed, stats};
+            cin >> label >> randZombieNum;
             
             // Create random zombies and add them to deque
             for (int i = 0; i < randZombieNum; ++i) {
@@ -260,38 +246,36 @@ int main(int argc, char * argv[]) {
                 Zombie x(name,distance,speed,health);
                 zombieList.push_back(x);
             }
-        
-            cin >> label >> inputNum;
-            namedZombieNum = inputNum;
-        
-            cin >> label;
+            
+            cin >> label >> namedZombieNum;
+            
             // Create named zombies and add them to deque
-            if (inputNum > 0) {
-                while (label != "---") {
-                    Zombie x(label,0,0,0);
-                    cin >> label >> inputNum;
-                    x.distance = inputNum;
-                    cin >> label >> inputNum;
-                    x.speed = inputNum;
-                    cin >> label >> inputNum;
-                    x.health = inputNum;
-                
-                    zombieList.push_back(x);
+            if (namedZombieNum > 0) {
+                while (namedZombieNum > 0) {
                     cin >> label;
+                    Zombie x(label,0,0,0);
+                    cin >> label >> x.distance;
+                    cin >> label >> x.speed;
+                    cin >> label >> x.health;
+                    
+                    zombieList.push_back(x);
+                    --namedZombieNum;
                 }
             }
+            cin >> roundLabel;
+            cin >> label >> roundInput;
         }
         
         if (verbose) {
             for (int i = listedZombies; i < zombieList.size(); ++i) {
-                os << "Created: " << zombieList[i].name << " (distance: "
-                    << zombieList[i].distance << ")" << '\n';
+                os << "Created: " << zombieList[i].name << " (health: "
+                << zombieList[i].health << ")" << '\n';
             }
         }
         
         if (you.health <= 0) {
             os << "DEFEAT IN ROUND " << roundCounter << "! " << eater->name
-                << " ate your brains!" << '\n';
+            << " ate your brains!" << '\n';
             break;
         }
         
@@ -347,13 +331,29 @@ int main(int argc, char * argv[]) {
             }
             --quiverInv;
         }
+        deque<Zombie>::iterator it = zombieList.begin();
+        allDead = true;
+        while (it < zombieList.end()) {
+            if (it->alive) {
+                allDead = false;
+                ++it->rounds;
+            }
+            ++it;
+        }
     }
-
+    
     // All zombies are killed. You survived all rounds.
     if (you.health > 0) {
-        os << "VICTORY IN ROUND " << roundCounter << "! " << target->name
-        << " was the last zombie. You survived with " << you.health
-        << " health left." << '\n';
+        deque<Zombie>::iterator it = zombieList.begin();
+        allDead = true;
+        while (it < zombieList.end()) {
+            if (it->alive) allDead = false;
+        }
+        if (allDead) {
+            os << "VICTORY IN ROUND " << roundCounter << "! " << target->name
+            << " was the last zombie. You survived with " << you.health
+            << " health left." << '\n';
+        }
     }
     
     // If statistics specified on command line:
@@ -385,10 +385,10 @@ int main(int argc, char * argv[]) {
                 }
                 if (deadZombies.size() < statisticNum) {
                     os << deadZombies[deadZombies.size() - 1 - i].name
-                        << " " << deadZombies.size() - i << '\n';
+                    << " " << deadZombies.size() - i << '\n';
                 }
                 else os << deadZombies[deadZombies.size() - 1 - i].name
-                        << " " << statisticNum - i << '\n';
+                    << " " << statisticNum - i << '\n';
             }
         }
         
@@ -408,6 +408,7 @@ int main(int argc, char * argv[]) {
         }
         
         os << "Lease active zombies:" << '\n';
+        sort(zombieList.begin(), zombieList.end(), order3);
         if (zombieList.size() <= statisticNum) {
             for (deque<Zombie>::iterator it = zombieList.begin();
                  it < zombieList.end(); ++it) {
@@ -417,7 +418,7 @@ int main(int argc, char * argv[]) {
         else {
             for (int i = 0; i < statisticNum; ++i) {
                 os << zombieList[i].name << " "
-                    << zombieList[i].rounds << '\n';
+                << zombieList[i].rounds << '\n';
             }
         }
         
@@ -426,14 +427,3 @@ int main(int argc, char * argv[]) {
     cout << os.str();
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
