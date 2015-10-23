@@ -34,79 +34,6 @@ void readInput(Player &you, int &seed, int &maxDistance,
     cin >> label >> maxHealth;
 }
 
-void fillPoormanQueue(poorman_priority_queue<Zombie*, CompareZombie> &poorQueue,
-                      std::deque<Zombie> &zombieList, const int roundCounter,
-                      int &listedZombies) {
-    if (roundCounter == 1) {
-        for (deque<Zombie>::iterator it = zombieList.begin();
-             it < zombieList.end(); ++it) {
-            poorQueue.push(&(*it));
-            ++listedZombies;
-        }
-    }
-    else {
-        while (listedZombies < zombieList.size()) {
-            poorQueue.push(&zombieList[listedZombies]);
-            ++listedZombies;
-        }
-    }
-}
-
-void fillSortedQueue(sorted_priority_queue<Zombie*, CompareZombie> &sortedQueue,
-                     std::deque<Zombie> &zombieList, const int roundCounter,
-                     int &listedZombies) {
-    if (roundCounter == 1) {
-        for (deque<Zombie>::iterator it = zombieList.begin();
-             it < zombieList.end(); ++it) {
-            sortedQueue.push(&(*it));
-            ++listedZombies;
-        }
-    }
-    else {
-        while (listedZombies < zombieList.size()) {
-            sortedQueue.push(&zombieList[listedZombies]);
-            ++listedZombies;
-        }
-    }
-    
-}
-
-void fillBinaryQueue(binary_priority_queue<Zombie*, CompareZombie> &binaryQueue,
-                     std::deque<Zombie> &zombieList, const int roundCounter,
-                     int &listedZombies) {
-    if (roundCounter == 1) {
-        for (deque<Zombie>::iterator it = zombieList.begin();
-             it < zombieList.end(); ++it) {
-            binaryQueue.push(&(*it));
-            ++listedZombies;
-        }
-    }
-    else {
-        while (listedZombies < zombieList.size()) {
-            binaryQueue.push(&zombieList[listedZombies]);
-            ++listedZombies;
-        }
-    }
-}
-
-void fillPairingQueue(pairing_priority_queue<Zombie*, CompareZombie> &pairingQueue,
-                      std::deque<Zombie> &zombieList, const int roundCounter,
-                      int &listedZombies) {
-    if (roundCounter == 1) {
-        for (deque<Zombie>::iterator it = zombieList.begin();
-             it < zombieList.end(); ++it) {
-            pairingQueue.push(&(*it));
-            ++listedZombies;
-        }
-    }
-    else {
-        while (listedZombies < zombieList.size()) {
-            pairingQueue.push(&zombieList[listedZombies]);
-            ++listedZombies;
-        }
-    }
-}
-
 
 // Getopt options for command arguments
 static struct option longopts[] = {
@@ -136,8 +63,8 @@ int main(int argc, char * argv[]) {
     // containerMarker equals 1. If sorted, 2. If binary, 3.
     // If pairing, 4. If illegal command line input, stays 0.
     int containerMarker = 0;
-    int listedZombies = 0;
-    int activeZombies = 0;
+    unsigned int listedZombies = 0;
+    unsigned int activeZombies = 0;
     unsigned int statisticNum = 0;
     unsigned int quiverInv = 0;
     
@@ -159,6 +86,7 @@ int main(int argc, char * argv[]) {
     CompareMostRounds order2;
     CompareLeastRounds order3;
     
+    eecs281_priority_queue<Zombie*,CompareZombie>* pqPtr;
     poorman_priority_queue<Zombie*, CompareZombie> poorQueue(order1);
     sorted_priority_queue<Zombie*, CompareZombie> sortedQueue(order1);
     binary_priority_queue<Zombie*, CompareZombie> binaryQueue(order1);
@@ -223,6 +151,7 @@ int main(int argc, char * argv[]) {
                 }
                 if (it->distance == 0) {
                     --you.health;
+                    
                     if (you.health == 0) {
                         eater = &(*it);
                     }
@@ -235,7 +164,7 @@ int main(int argc, char * argv[]) {
             cin >> label >> randZombieNum;
             
             // Create random zombies and add them to deque
-            for (int i = 0; i < randZombieNum; ++i) {
+            for (unsigned int i = 0; i < randZombieNum; ++i) {
                 string name = generator.getNextZombieName();
                 int speed = generator.getNextZombieSpeed();
                 int distance = generator.getNextZombieDistance();
@@ -264,7 +193,7 @@ int main(int argc, char * argv[]) {
         }
         
         if (verbose) {
-            for (int i = listedZombies; i < zombieList.size(); ++i) {
+            for (unsigned int i = listedZombies; i < zombieList.size(); ++i) {
                 os << "Created: " << zombieList[i].name << " (health: "
                 << zombieList[i].health << ")" << '\n';
             }
@@ -277,54 +206,42 @@ int main(int argc, char * argv[]) {
         }
         switch(containerMarker) {
             case 1:
-                fillPoormanQueue(poorQueue, zombieList, roundCounter, listedZombies);
+                pqPtr = &poorQueue;
                 break;
             case 2:
-                fillSortedQueue(sortedQueue, zombieList, roundCounter, listedZombies);
+                pqPtr = &sortedQueue;
                 break;
             case 3:
-                fillBinaryQueue(binaryQueue, zombieList, roundCounter, listedZombies);
+                pqPtr = &binaryQueue;
                 break;
             case 4:
-                fillPairingQueue(pairingQueue, zombieList, roundCounter,
-                                 listedZombies);
+                pqPtr = &pairingQueue;
                 break;
         }
         
-        while (quiverInv > 0) {
-            switch(containerMarker) {
-                case 1:
-                    target = poorQueue.top();
-                    break;
-                case 2:
-                    target = sortedQueue.top();
-                    break;
-                case 3:
-                    target = binaryQueue.top();
-                    break;
-                case 4:
-                    target = pairingQueue.top();
-                    break;
+        if (roundCounter == 1) {
+            for (deque<Zombie>::iterator it = zombieList.begin();
+                 it < zombieList.end(); ++it) {
+                pqPtr->push(&(*it));
+                ++listedZombies;
             }
+        }
+        else {
+            while (listedZombies < zombieList.size()) {
+                pqPtr->push(&zombieList[listedZombies]);
+                ++listedZombies;
+            }
+        }
+        
+        while (quiverInv > 0) {
+            pqPtr->update_priorities();
+            target = pqPtr->top();
             if (target != NULL) {
                 --target->health;
                 if (target->health == 0)  {
                     target->alive = false;
                     deadZombies.push_back(*target);
-                    switch(containerMarker) {
-                        case 1:
-                            poorQueue.pop();
-                            break;
-                        case 2:
-                            sortedQueue.pop();
-                            break;
-                        case 3:
-                            binaryQueue.pop();
-                            break;
-                        case 4:
-                            pairingQueue.pop();
-                            break;
-                    }
+                    pqPtr->pop();
                 }
             }
             --quiverInv;
@@ -362,7 +279,7 @@ int main(int argc, char * argv[]) {
         if (!deadZombies.empty()) {
             
             os << "First zombies killed:" << '\n';
-            for (int i = 0; i < statisticNum; ++i) {
+            for (unsigned int i = 0; i < statisticNum; ++i) {
                 if (i >= deadZombies.size()) {
                     break;
                 }
@@ -370,7 +287,7 @@ int main(int argc, char * argv[]) {
             }
             
             os << "Last zombies killed:" << '\n';
-            for (int i = 0; i < statisticNum; ++i) {
+            for (unsigned int i = 0; i < statisticNum; ++i) {
                 if (i >= deadZombies.size()) {
                     break;
                 }
@@ -392,7 +309,7 @@ int main(int argc, char * argv[]) {
             }
         }
         else {
-            for (int i = 0; i < statisticNum; ++i) {
+            for (unsigned int i = 0; i < statisticNum; ++i) {
                 os << zombieList[zombieList.size() - 1 - i].name << " "
                 << zombieList[zombieList.size() - 1 - i].rounds << '\n';
             }
@@ -407,7 +324,7 @@ int main(int argc, char * argv[]) {
             }
         }
         else {
-            for (int i = 0; i < statisticNum; ++i) {
+            for (unsigned int i = 0; i < statisticNum; ++i) {
                 os << zombieList[i].name << " "
                 << zombieList[i].rounds << '\n';
             }

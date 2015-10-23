@@ -77,21 +77,5 @@ struct CompareLeastRounds {
 void readInput(Player &you, int &seed, int &maxDistance,
                int &maxSpeed, int &maxHealth);
 
-void fillPoormanQueue(poorman_priority_queue<Zombie*, CompareZombie> &poorQueue,
-                      std::deque<Zombie> &zombieList, const int roundCounter,
-                      int &listedZombies);
-
-void fillSortedQueue(sorted_priority_queue<Zombie*, CompareZombie> &sortedQueue,
-                     std::deque<Zombie> &zombieList, const int roundCounter,
-                     int &listedZombies);
-
-void fillBinaryQueue(binary_priority_queue<Zombie*, CompareZombie> &binaryQueue,
-                     std::deque<Zombie> &zombieList, const int roundCounter,
-                     int &listedZombies);
-
-void fillPairingQueue(pairing_priority_queue<Zombie*, CompareZombie> &pairingQueue,
-                      std::deque<Zombie> &zombieList, const int roundCounter,
-                      int &listedZombies);
-
 
 #endif
