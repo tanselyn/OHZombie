@@ -129,7 +129,6 @@ int main(int argc, char * argv[]) {
     
     char type;
     string label;
-    string roundLabel;
     
     int idx = 0;
     int containerCounter = 0;
@@ -205,10 +204,9 @@ int main(int argc, char * argv[]) {
     RandomZombieStats stats{maxDistance, maxSpeed, maxHealth};
     RandomZombieGenerator generator{seed, stats};
     
-    cin >> roundLabel >> label >> roundInput;
-    while (roundLabel == "---" || !allDead) {
+    cin >> label >> label >> roundInput;
+    while (roundCounter < roundInput || !allDead) {
         ++roundCounter;
-        
         if (verbose) {
             os << "Round: " << roundCounter << '\n';
         }
@@ -262,8 +260,7 @@ int main(int argc, char * argv[]) {
                     --namedZombieNum;
                 }
             }
-            cin >> roundLabel;
-            cin >> label >> roundInput;
+            if (cin >> label >> label) cin >> roundInput;
         }
         
         if (verbose) {
@@ -278,7 +275,6 @@ int main(int argc, char * argv[]) {
             << " ate your brains!" << '\n';
             break;
         }
-        
         switch(containerMarker) {
             case 1:
                 fillPoormanQueue(poorQueue, zombieList, roundCounter, listedZombies);
@@ -290,7 +286,8 @@ int main(int argc, char * argv[]) {
                 fillBinaryQueue(binaryQueue, zombieList, roundCounter, listedZombies);
                 break;
             case 4:
-                fillPairingQueue(pairingQueue, zombieList, roundCounter, listedZombies);
+                fillPairingQueue(pairingQueue, zombieList, roundCounter,
+                                 listedZombies);
                 break;
         }
         
@@ -309,51 +306,45 @@ int main(int argc, char * argv[]) {
                     target = pairingQueue.top();
                     break;
             }
-            --target->health;
-            
-            if (target->health == 0)  {
-                target->alive = false;
-                deadZombies.push_back(*target);
-                switch(containerMarker) {
-                    case 1:
-                        poorQueue.pop();
-                        break;
-                    case 2:
-                        sortedQueue.pop();
-                        break;
-                    case 3:
-                        binaryQueue.pop();
-                        break;
-                    case 4:
-                        pairingQueue.pop();
-                        break;
+            if (target != NULL) {
+                --target->health;
+                if (target->health == 0)  {
+                    target->alive = false;
+                    deadZombies.push_back(*target);
+                    switch(containerMarker) {
+                        case 1:
+                            poorQueue.pop();
+                            break;
+                        case 2:
+                            sortedQueue.pop();
+                            break;
+                        case 3:
+                            binaryQueue.pop();
+                            break;
+                        case 4:
+                            pairingQueue.pop();
+                            break;
+                    }
                 }
             }
             --quiverInv;
         }
-        deque<Zombie>::iterator it = zombieList.begin();
         allDead = true;
-        while (it < zombieList.end()) {
+        for (deque<Zombie>::iterator it = zombieList.begin();
+             it < zombieList.end(); ++it) {
             if (it->alive) {
                 allDead = false;
                 ++it->rounds;
             }
-            ++it;
         }
     }
     
     // All zombies are killed. You survived all rounds.
     if (you.health > 0) {
-        deque<Zombie>::iterator it = zombieList.begin();
-        allDead = true;
-        while (it < zombieList.end()) {
-            if (it->alive) allDead = false;
-        }
-        if (allDead) {
-            os << "VICTORY IN ROUND " << roundCounter << "! " << target->name
-            << " was the last zombie. You survived with " << you.health
-            << " health left." << '\n';
-        }
+        target = &deadZombies.back();
+        os << "VICTORY IN ROUND " << roundCounter << "! " << target->name
+        << " was the last zombie. You survived with " << you.health
+        << " health left." << '\n';
     }
     
     // If statistics specified on command line:
@@ -407,7 +398,7 @@ int main(int argc, char * argv[]) {
             }
         }
         
-        os << "Lease active zombies:" << '\n';
+        os << "Least active zombies:" << '\n';
         sort(zombieList.begin(), zombieList.end(), order3);
         if (zombieList.size() <= statisticNum) {
             for (deque<Zombie>::iterator it = zombieList.begin();

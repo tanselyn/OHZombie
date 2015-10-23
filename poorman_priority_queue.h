@@ -2,6 +2,7 @@
 #define POORMAN_PRIORITY_QUEUE_H
 
 #include <vector>
+#include <iostream>
 
 #include "eecs281_priority_queue.h"
 
@@ -12,26 +13,26 @@ template<typename TYPE, typename COMP_FUNCTOR = std::less<TYPE>>
 class poorman_priority_queue : public eecs281_priority_queue<TYPE, COMP_FUNCTOR> {
 public:
     typedef unsigned size_type;
-
+    
     //Description: Construct a priority_queue out of an iterator range with an optional
     //             comparison functor.
     //Runtime: O(n) where n is number of elements in range.
     template<typename InputIterator>
     poorman_priority_queue(InputIterator start, InputIterator end, COMP_FUNCTOR comp = COMP_FUNCTOR());
-
+    
     //Description: Construct an empty priority_queue with an optional comparison functor.
     //Runtime: O(1)
     poorman_priority_queue(COMP_FUNCTOR comp = COMP_FUNCTOR());
-
+    
     //Description: Does nothing for this implementation, as items can never be
     //             'out of order'. This function is implemented for you.
     //Runtime: O(1)
     virtual void update_priorities() {}
-
+    
     //Description: Add a new element to the priority_queue.
     //Runtime: Amortized O(1)
     virtual void push(const TYPE& val);
-
+    
     //Description: Remove the most extreme (defined by 'compare') element from
     //             the priority_queue.
     //Note: We will not run tests on your code that would require it to pop an
@@ -39,17 +40,17 @@ public:
     //familiar with them, you do not need to use exceptions in this project.
     //Runtime: O(n)
     virtual void pop();
-
+    
     //Description: Return the most extreme (defined by 'compare') element of
     //             the priority_queue.
     //Runtime: O(n)
     virtual const TYPE& top() const;
-
+    
     //Description: Get the number of elements in the priority_queue. This has been
     //             implemented for you.
     //Runtime: O(1)
     virtual size_type size() const { return data.size(); }
-
+    
     //Description: Return true if the priority_queue is empty. This has been implemented
     //             for you.
     //Runtime: O(1)
@@ -64,7 +65,7 @@ private:
 template<typename TYPE, typename COMP_FUNCTOR>
 template<typename InputIterator>
 poorman_priority_queue<TYPE, COMP_FUNCTOR>::poorman_priority_queue(
-    InputIterator start, InputIterator end, COMP_FUNCTOR comp) {
+                                                                   InputIterator start, InputIterator end, COMP_FUNCTOR comp) {
     
     for (InputIterator i = start; i < end; ++i) {
         data.push_back(*i);
@@ -99,6 +100,7 @@ template<typename TYPE, typename COMP_FUNCTOR>
 const TYPE& poorman_priority_queue<TYPE, COMP_FUNCTOR>::top() const {
     TYPE max = data[0];
     int index = 0;
+    if (data.empty()) return NULL;
     for (int i = 0; i < data.size(); ++i) {
         if (this->compare(max,data[i])) {
             max = data[i];
